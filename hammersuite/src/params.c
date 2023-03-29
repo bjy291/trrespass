@@ -187,7 +187,7 @@ int process_argv(int argc, char *argv[], ProfileParams *p)
 			}
 			break;
 		case 'V':
-			if (str2pat(optarg, &(p->tpat))) {
+			if (str2pat(optarg, &(p->tpat))) { //문자열에 대한 검색 테이블을 작성?, 실제 검색 문자열을 반환
 				fprintf(stderr, "Invalid victim fill pattern: %s\n", optarg);
 				return -1;
 			}
