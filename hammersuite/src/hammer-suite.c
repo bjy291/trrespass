@@ -81,8 +81,8 @@ typedef struct {
 
 typedef struct {
 	DRAMAddr d_vict;
-	uint8_t f_og;
-	uint8_t f_new;
+	uint8_t f_og;  //??
+	uint8_t f_new; // ??
 	HammerPattern *h_patt;
 } FlipVal;
 
@@ -145,7 +145,7 @@ char *hPatt_2_str(HammerPattern * h_patt, int fields)
 
 void print_start_attack(HammerPattern *h_patt)
 {
-	fprintf(out_fd, "%s : ", hPatt_2_str(h_patt, ROW_FIELD | BK_FIELD));
+	fprintf(out_fd, "print_start_attack : %s : ", hPatt_2_str(h_patt, ROW_FIELD | BK_FIELD));
 	fflush(out_fd);
 }
 
@@ -155,9 +155,9 @@ void print_end_attack()
 	fflush(out_fd);
 }
 
-void export_flip(FlipVal * flip)
+void export_flip(FlipVal * flip) //f_og -> old? f_new -> new?
 {
-	if (p->g_flags & F_VERBOSE) {
+	if (p->g_flags & F_VERBOSE) {  // %x 16진수 // %s 문자열 
 		fprintf(stdout, "[FLIP] - (%02x => %02x)\t vict: %s \taggr: %s \n",
 				flip->f_og, flip->f_new, dAddr_2_str(flip->d_vict, ALL_FIELDS),
 				hPatt_2_str(flip->h_patt, ROW_FIELD | BK_FIELD));
@@ -211,7 +211,11 @@ int random_int(int min, int max)
 
 uint64_t hammer_it(HammerPattern* patt, MemoryBuffer* mem) {
 
-	char** v_lst = (char**) malloc(sizeof(char*)*patt->len);
+	char** v_lst = (char**) malloc(sizeof(char*)*patt->len); // 어그레서 수의 사이즈 만큼 할당 하고 
+
+	fprintf(stderr, "********start hammer_it *********\n");
+	//fprintf(stderr, "*patt->len : %ld\n", patt->len); len이 aggressor 수임
+	//fprintf(stderr, "[INFO] - v_lst%s: ", v_lst);
 	for (size_t i = 0; i < patt->len; i++) {
 		v_lst[i] = phys_2_virt(dram_2_phys(patt->d_lst[i]), mem);
 	}
@@ -227,8 +231,8 @@ uint64_t hammer_it(HammerPattern* patt, MemoryBuffer* mem) {
 			t1 = rdtscp();
 		}
 	}
-
-
+	//fprintf(stderr, "check : v_lst%p / %p / %p\n", **v_lst[0], **v_lst[1], **v_lst[2]);
+	//fprintf(stderr, "check : v_lst%p / %p / %p\n", v_lst[0], v_lst[1], v_lst[2]);
 	uint64_t cl0, cl1;
 	cl0 = realtime_now();
 	for ( int i = 0; i < patt->rounds;  i++) {
@@ -237,6 +241,7 @@ uint64_t hammer_it(HammerPattern* patt, MemoryBuffer* mem) {
 			*(volatile char*) v_lst[j];
 		}
 		for (size_t j = 0; j < patt->len; j++) {
+			//fprintf(stderr, "clflushopt[%d] : v_lst%p \n", j, v_lst[j]);
 			clflushopt(v_lst[j]);
 		}
 	}
@@ -262,7 +267,7 @@ void __test_fill_random(char *addr, size_t size)
 
 }
 
-// DRAMAddr needs to be a copy in order to leave intact the original address
+// DRAMAddr needs to be a copy in order to leave intact the original address // 원래 주소를 그대로 두려면 DRAMAddr이 복사본이어야 합니다.
 void fill_stripe(DRAMAddr d_addr, uint8_t val, ADDRMapper * mapper)
 {
 	for (size_t col = 0; col < ROW_SIZE; col += (1 << 6)) {
@@ -277,6 +282,9 @@ void fill_row(HammerSuite *suite, DRAMAddr *d_addr, HammerData data_patt, int re
 {
 	if (p->vpat != (void *)NULL && p->tpat != (void *)NULL) {
 		uint8_t pat = reverse ? *p->vpat : *p->tpat;
+
+		//fprintf(stderr, "\nstart fill_row function : %d\n", pat); // 255 255 / 0 0 255 255 / 0 0 255 255
+
 		fill_stripe(*d_addr, pat, suite->mapper);
 		return;
 	}
@@ -287,16 +295,19 @@ void fill_row(HammerSuite *suite, DRAMAddr *d_addr, HammerData data_patt, int re
 
 	switch (data_patt) {
 	case RANDOM:
+		fprintf(stderr, "\nfill_row / RANDOM %d\n", data_patt);
 		// rows are already filled for random data patt
 		break;
 	case ONE_TO_ZERO:
+		fprintf(stderr, "\nfill_row / ONE_TO_ZERO %d\n", data_patt);
 		fill_stripe(*d_addr, 0x00, suite->mapper);
 		break;
 	case ZERO_TO_ONE:
+		fprintf(stderr, "\nfill_row / ZERO_TO_ONE %d\n", data_patt);
 		fill_stripe(*d_addr, 0xff, suite->mapper);
 		break;
 	default:
-		// fprintf(stderr, "[ERROR] - Wrong data pattern %d\n", data_patt);
+		fprintf(stderr, "[ERROR] - Wrong data pattern %d\n", data_patt);
 		// exit(1);
 		break;
 	}
@@ -585,7 +596,7 @@ int free_triple_sided_test(HammerSuite * suite)
 			h_patt.d_lst[0].bank = 0;
 			h_patt.d_lst[1].bank = 0;
 			h_patt.d_lst[2].bank = 0;
-			fprintf(stderr, "[HAMMER] - %s: ", hPatt_2_str(&h_patt, ROW_FIELD));
+			fprintf(stderr, "[HAMMER] - aa%s: ", hPatt_2_str(&h_patt, ROW_FIELD));
 			for (size_t bk = 0; bk < get_banks_cnt(); bk++) {
 				h_patt.d_lst[0].bank = bk;
 				h_patt.d_lst[1].bank = bk;
@@ -671,7 +682,10 @@ int n_sided_test(HammerSuite * suite)
 {
 	MemoryBuffer *mem = suite->mem;
 	SessionConfig *cfg = suite->cfg;
-	DRAMAddr d_base = suite->d_base;
+	DRAMAddr d_base = suite->d_base; // d_base는 DRAMAddr 구조체 --> bank, row, col
+	
+	//fprintf(stderr, "\n d_base : %ld %ld %ld\n\n", d_base.bank, d_base.row, d_base.col); //0 32768 0
+	
 	d_base.col = 0;
 	/* d_base.row = 20480; */
     /* d_base.row = 16400; */
@@ -681,35 +695,47 @@ int n_sided_test(HammerSuite * suite)
 	h_patt.rounds = cfg->h_rounds;
 
 	h_patt.d_lst = (DRAMAddr *) malloc(sizeof(DRAMAddr) * h_patt.len);
+
+	DRAMAddr test_d = *h_patt.d_lst;
+	//fprintf(stderr, "\n test_d : %ld %ld %ld\n\n", test_d.bank, test_d.row, test_d.col); // 0 0 0
+
 	memset(h_patt.d_lst, 0x00, sizeof(DRAMAddr) * h_patt.len);
 
 	init_chunk(suite);
 	fprintf(stderr, "CL_SEED: %lx\n", CL_SEED);
 	h_patt.d_lst[0] = d_base;
 
-	const int mem_to_hammer = 256 << 20;
-	const int n_rows = mem_to_hammer / ((8<<10) *  get_banks_cnt());
+	const int mem_to_hammer = 256 << 20; // 268435456
+	const int n_rows = mem_to_hammer / ((8<<10) *  get_banks_cnt()); // 8 << 10 = 8192? // get_banks_cnt() : 32
+	fprintf(stderr, "\n\n n_rows : %d\n\n", mem_to_hammer);
 	fprintf(stderr, "Hammering %d rows per bank\n", n_rows);
 	for (int r0 = 1; r0 < n_rows; r0++) {
 		h_patt.d_lst[0].row = d_base.row + r0;
+		
+		//fprintf(stderr, "\n nh_patt.d_lst[0].row : %ld\n\n", h_patt.d_lst[0].row); // 32769 ~ 32770~ 1씩 증가
+		
 		int k = 1;
 		for (; k < cfg->aggr_n; k++) {
 			h_patt.d_lst[k].row = h_patt.d_lst[k - 1].row + 2;
-			h_patt.d_lst[k].bank = 0;
+			h_patt.d_lst[k].bank = 0;	
+
+			//fprintf(stderr, "\n h_patt.d_lst[k].row bank : %ld %ld\n\n", h_patt.d_lst[k].row, h_patt.d_lst[k].bank); 1row 제외한 2 ~ 3 row 가리킴.
 		}
 		if (h_patt.d_lst[k - 1].row >= d_base.row + cfg->h_rows)
 			break;
 
 		fprintf(stderr, "[HAMMER] - %s: ", hPatt_2_str(&h_patt, ROW_FIELD));
+		//fprintf(stderr, "\n ROW_FIELD : %d\n\n", ROW_FIELD); // ROW_FIELD : 1?
 		for (size_t bk = 0; bk < get_banks_cnt(); bk++) {
 
 			for (int s = 0; s < cfg->aggr_n; s++) {
 				h_patt.d_lst[s].bank = bk;
+				//fprintf(stderr, "\n h_patt.d_lst[s].bank : %ld\n\n", h_patt.d_lst[s].bank); // agg 수 만큼 찍으면서 총 0~31까지 32번
 			}
 #ifdef FLIPTABLE
 				print_start_attack(&h_patt);
 #endif
-			// fill all the aggressor rows
+			// fill all the aggressor rows //단순하게 어그레서 로우에 데이터 채우는 듯?
 			for (int idx = 0; idx < cfg->aggr_n; idx++) {
 				fill_row(suite, &h_patt.d_lst[idx], cfg->d_cfg, 0);
 			}

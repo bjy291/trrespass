@@ -64,7 +64,7 @@ void cpuid()
 static inline __attribute__ ((always_inline))
 void mfence()
 {
-	asm volatile ("mfence":::"memory");
+	asm volatile ("mfence":::"memory"); // inlic
 }
 
 static inline __attribute__ ((always_inline))

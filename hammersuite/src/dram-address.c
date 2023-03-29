@@ -43,8 +43,14 @@ physaddr_t dram_2_phys(DRAMAddr d_addr)
 	uint64_t col_val = 0;
 
 	p_addr = (d_addr.row << __builtin_ctzl(g_mem_layout.row_mask));	// set row bits
+
+	fprintf(stderr, "p_addr %ld: \n", p_addr); // 6657938752 ~~~
 	p_addr |= (d_addr.col << __builtin_ctzl(g_mem_layout.col_mask));	// set col bits
 
+
+	fprintf(stderr, "p_addr 2 %ld: \n", p_addr); // 6657933312 ~~
+	// 둘이 마이너스 : 5440 ㄴㄴ --> set row bits 는 같은 값이지만 set col bits 후 64만큼 차이가 난다. 
+   
 	for (int i = 0; i < g_mem_layout.h_fns.len; i++) {
 		uint64_t masked_addr = p_addr & g_mem_layout.h_fns.lst[i];
 		// if the address already respects the h_fn then just move to the next func

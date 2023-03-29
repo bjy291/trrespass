@@ -77,12 +77,12 @@ int main(int argc, char **argv)
 	}
 
 	MemoryBuffer mem = {
-		.buffer = NULL,
-		.physmap = NULL,
-		.fd = p->huge_fd,
-		.size = p->m_size,
+		.buffer = NULL,		//base addr
+		.physmap = NULL,	//모든 페이지의 virt <-> phys 매핑
+		.fd = p->huge_fd,	//fd in the case of mmap hugetlbfs
+		.size = p->m_size,	// bytes
 		.align = p->m_align,
-		.flags = p->g_flags & MEM_MASK
+		.flags = p->g_flags & MEM_MASK // from params
 	};
 
 	alloc_buffer(&mem);

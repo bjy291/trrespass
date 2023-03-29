@@ -18,13 +18,15 @@ int alloc_buffer(MemoryBuffer * mem)
 	if (mem->buffer != NULL) {
 		fprintf(stderr, "[ERROR] - Memory already allocated\n");
 	}
-
+	fprintf(stderr, "[Info] - SC_PAGE_SIZE : %d / mem->align : %ld\n", _SC_PAGE_SIZE, mem->align);
 	if (mem->align < _SC_PAGE_SIZE) {
+		fprintf(stderr, "mem->align start\n");
 		mem->align = 0;
 	}
 
 	uint64_t alloc_size = mem->align ? mem->size + mem->align : mem->size;
 	uint64_t alloc_flags = MAP_PRIVATE | MAP_POPULATE;
+	fprintf(stderr, "[Info] - alloc_size : %ld / alloc_flags : %ld\n", alloc_size, alloc_flags);
 
 	if (mem->flags & F_ALLOC_HUGE) {
 		if (mem->fd == 0) {
